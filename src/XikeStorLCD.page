@@ -1,0 +1,52 @@
+Menu="Utilities"
+Title="XikeStor LCD"
+Icon="desktop"
+---
+<?php
+$plugin  = "xk_lcd";
+$cfg     = parse_plugin_cfg($plugin);
+$pid     = @trim(@file_get_contents("/var/run/xk_lcd.pid"));
+$running = $pid !== "" && file_exists("/proc/$pid");
+$panel   = trim(shell_exec("grep -l 374A:0000B101 /sys/class/hidraw/*/device/uevent 2>/dev/null"));
+$disks   = @parse_ini_file("/var/local/emhttp/disks.ini", true) ?: [];
+$names   = implode(", ", array_keys($disks));
+$log     = shell_exec("tail -n 25 /var/log/xk_lcd.log 2>/dev/null");
+?>
+<form markdown="1" method="POST" action="/update.php" target="progressFrame">
+<input type="hidden" name="#file" value="xk_lcd/xk_lcd.cfg">
+<input type="hidden" name="#command" value="/usr/local/emhttp/plugins/xk_lcd/scripts/rc.xk_lcd">
+<input type="hidden" name="#arg[1]" value="restart">
+
+Status:
+: <?=$running ? "<span class='green-text'>Running</span>" : "<span class='red-text'>Stopped</span>"?>
+  &nbsp;&bull;&nbsp; Panel <?=$panel ? "detected" : "<span class='red-text'>not detected</span> (USB 374a:b101)"?>
+
+Enable service:
+: <select name="SERVICE">
+  <?=mk_option($cfg['SERVICE'], "enable", "Yes")?>
+  <?=mk_option($cfg['SERVICE'], "disable", "No")?>
+  </select>
+
+HDD1 &ndash; HDD4 temperature slots:
+: <input type="text" name="HDD_SLOTS" class="narrow" style="width:22em" value="<?=htmlspecialchars($cfg['HDD_SLOTS'])?>">
+  <span>Comma-separated Unraid disk names, in panel order. Available: <?=htmlspecialchars($names ?: "array not started")?></span>
+
+LAN1 / LAN2 interfaces:
+: <input type="text" name="LAN_IFACES" class="narrow" style="width:22em" value="<?=htmlspecialchars($cfg['LAN_IFACES'])?>" placeholder="auto">
+  <span>Comma-separated, e.g. <code>br0,eth1</code>. Leave blank to auto-detect.</span>
+
+Allow Shutdown/Reboot from panel:
+: <select name="POWER_ACTIONS">
+  <?=mk_option($cfg['POWER_ACTIONS'], "yes", "Yes")?>
+  <?=mk_option($cfg['POWER_ACTIONS'], "no", "No")?>
+  </select>
+
+Refresh interval (seconds):
+: <input type="number" name="REFRESH" class="narrow" min="2" max="300" value="<?=htmlspecialchars($cfg['REFRESH'])?>">
+
+&nbsp;
+: <input type="submit" name="#apply" value="Apply"><input type="button" value="Done" onclick="done()">
+</form>
+
+<div style="margin-top:2em"><strong>Recent log</strong> (<code>/var/log/xk_lcd.log</code>)</div>
+<pre style="max-height:24em;overflow:auto"><?=htmlspecialchars($log ?: "(empty)")?></pre>

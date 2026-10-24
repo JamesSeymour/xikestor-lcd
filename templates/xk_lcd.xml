@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<Plugin>
+  <Name>XikeStor LCD</Name>
+  <PluginURL>https://raw.githubusercontent.com/REPO_OWNER/xikestor-lcd/main/xk_lcd.plg</PluginURL>
+  <Project>https://github.com/REPO_OWNER/xikestor-lcd</Project>
+  <Support>https://github.com/REPO_OWNER/xikestor-lcd/issues</Support>
+  <Icon>https://raw.githubusercontent.com/REPO_OWNER/xikestor-lcd/main/icon.png</Icon>
+  <Category>Tools:Utilities</Category>
+  <MinVer>6.12.0</MinVer>
+  <License>MIT</License>
+  <ReadMe>https://github.com/REPO_OWNER/xikestor-lcd#readme</ReadMe>
+  <Overview>Drives the front-panel LCD on XikeStor NAS units, which otherwise stays on
+"STARTING SYSTEM" under Unraid. Shows CPU/system/disk temperatures, array capacity and
+network details (never waking spun-down disks), and lets the panel menu cleanly shut down
+or reboot the server. Configure under Settings - Utilities - XikeStor LCD.</Overview>
+  <Requires>A XikeStor NAS with the front-panel LCD (USB device 374a:b101, "HOLTEK USB-HID AP"). No other dependencies.</Requires>
+  <ExtraSearchTerms>xikestor lcd front panel display holtek nas screen</ExtraSearchTerms>
+</Plugin>

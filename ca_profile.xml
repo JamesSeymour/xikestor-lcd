@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>Unraid support for XikeStor NAS hardware. Currently: the XikeStor LCD plugin, which
+drives the front-panel display and its menu. Report problems or other XikeStor models via the
+support link.</Profile>
+  <Icon>https://raw.githubusercontent.com/REPO_OWNER/xikestor-lcd/main/icon.png</Icon>
+  <WebPage>https://github.com/REPO_OWNER/xikestor-lcd</WebPage>
+  <Forum>https://github.com/REPO_OWNER/xikestor-lcd/issues</Forum>
+</CommunityApplications>

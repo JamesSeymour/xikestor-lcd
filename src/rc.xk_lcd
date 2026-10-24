@@ -1,0 +1,47 @@
+#!/bin/bash
+# Start/stop the XikeStor LCD daemon.  Usage: rc.xk_lcd {start|stop|restart|boot|status}
+DAEMON=/usr/local/emhttp/plugins/xk_lcd/scripts/xk_lcd.php
+CFG=/boot/config/plugins/xk_lcd/xk_lcd.cfg
+PIDFILE=/var/run/xk_lcd.pid
+LOG=/var/log/xk_lcd.log
+
+running() { [[ -f $PIDFILE ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+enabled() {
+  local s
+  s=$(sed -n 's/^SERVICE="\(.*\)"/\1/p' "$CFG" 2>/dev/null)
+  [[ "${s:-enable}" == "enable" ]]
+}
+
+start() {
+  if running; then echo "xk_lcd is already running"; return 0; fi
+  # Refuse to run alongside a manually started copy, including the original Python version
+  # (xk_lcd.py) some users launched from /boot/config/go. Matches only an interpreter actually
+  # running the daemon, not shells that merely mention it.
+  if pgrep -f "^(/usr/bin/)?(php|python3?) [^ ]*xk_lcd\.(py|php)" >/dev/null; then
+    echo "Another copy of xk_lcd is already running (started from /boot/config/go?). Stop it and remove it from go first."
+    return 1
+  fi
+  nohup php "$DAEMON" --config "$CFG" >> "$LOG" 2>&1 &
+  echo $! > "$PIDFILE"
+  echo "xk_lcd started (log: $LOG)"
+}
+
+stop() {
+  if running; then
+    kill "$(cat "$PIDFILE")"
+    for _ in 1 2 3 4 5; do running || break; sleep 1; done
+    running && kill -9 "$(cat "$PIDFILE")" 2>/dev/null
+    echo "xk_lcd stopped"
+  fi
+  rm -f "$PIDFILE"
+}
+
+case "$1" in
+  start)   start ;;
+  stop)    stop ;;
+  restart) stop; if enabled; then sleep 1; start; else echo "xk_lcd is disabled"; fi ;;
+  boot)    if enabled; then start; else echo "xk_lcd is disabled"; fi ;;
+  status)  if running; then echo "running (pid $(cat "$PIDFILE"))"; else echo "stopped"; fi ;;
+  *)       echo "Usage: $0 {start|stop|restart|boot|status}"; exit 1 ;;
+esac
