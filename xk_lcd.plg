@@ -1,16 +1,16 @@
 <?xml version='1.0' standalone='yes'?>
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "xk_lcd">
-<!ENTITY author    "REPO_OWNER">
+<!ENTITY author    "JamesSeymour">
 <!ENTITY version   "2026.10.24">
-<!ENTITY project   "https://github.com/REPO_OWNER/xikestor-lcd">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/REPO_OWNER/xikestor-lcd/main/xk_lcd.plg">
+<!ENTITY project   "https://github.com/JamesSeymour/xikestor-lcd">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/JamesSeymour/xikestor-lcd/main/xk_lcd.plg">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 <!ENTITY plugdir   "/boot/config/plugins/&name;">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;"
-        support="https://github.com/REPO_OWNER/xikestor-lcd/issues" icon="desktop" min="6.12.0">
+        support="https://github.com/JamesSeymour/xikestor-lcd/issues" icon="desktop" min="6.12.0">
 
 <CHANGES>
 ###&version;
@@ -29,7 +29,7 @@ if [ -x &emhttp;/scripts/rc.xk_lcd ]; then &emhttp;/scripts/rc.xk_lcd stop; fi
 /*
  * xk_lcd.php - Unraid driver for the XikeStor front-panel LCD (Holtek USB HID 374a:b101).
  *
- * https://github.com/REPO_OWNER/xikestor-lcd  -  MIT licence.
+ * https://github.com/JamesSeymour/xikestor-lcd  -  MIT licence.
  * Not affiliated with XikeStor. Independent implementation; no vendor code included.
  *
  * Protocol (reverse-engineered for interoperability):

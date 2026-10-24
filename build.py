@@ -8,7 +8,7 @@ src/ plus the generated xk_lcd.plg, templates/xk_lcd.xml and ca_profile.xml.
 import argparse, base64, datetime, hashlib, pathlib, xml.dom.minidom
 
 HOST     = "github"          # "github" (needed for Community Apps) or "gitlab"
-OWNER    = "REPO_OWNER"      # <-- your GitHub/GitLab username
+OWNER    = "JamesSeymour"      # <-- your GitHub/GitLab username
 PROJECT  = "xikestor-lcd"
 BRANCH   = "main"
 SUPPORT  = ""                # Unraid forum support thread URL; blank = repo issues

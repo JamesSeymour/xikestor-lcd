@@ -34,12 +34,10 @@ Search **XikeStor LCD** in the Apps tab (once listed in Community Applications),
 **Plugins → Install Plugin** and paste:
 
 ```
-https://raw.githubusercontent.com/REPO_OWNER/xikestor-lcd/main/xk_lcd.plg
+https://raw.githubusercontent.com/JamesSeymour/xikestor-lcd/main/xk_lcd.plg
 ```
 
 Settings live under **Settings → Utilities → XikeStor LCD**. The daemon starts automatically at boot.
-
-> If you previously started the daemon from `/boot/config/go`, remove those lines first.
 
 ## Settings
 
