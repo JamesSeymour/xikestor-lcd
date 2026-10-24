@@ -1,5 +1,7 @@
 # XikeStor LCD for Unraid
 
+[![CI](https://github.com/JamesSeymour/xikestor-lcd/actions/workflows/ci.yml/badge.svg)](https://github.com/JamesSeymour/xikestor-lcd/actions/workflows/ci.yml)
+
 Brings the front-panel LCD on XikeStor NAS units back to life under Unraid. Out of the box the
 panel sits on **"STARTING SYSTEM / PLEASE WAIT"** forever, because the vendor's own OS drives it
 and Unraid has nothing that talks to it.
@@ -38,6 +40,8 @@ https://raw.githubusercontent.com/JamesSeymour/xikestor-lcd/main/xk_lcd.plg
 ```
 
 Settings live under **Settings → Utilities → XikeStor LCD**. The daemon starts automatically at boot.
+
+> If you previously started the daemon from `/boot/config/go`, remove those lines first.
 
 ## Settings
 
@@ -107,9 +111,12 @@ Button navigation is handled inside the panel; only menu actions are reported.
 - `src/rc.xk_lcd` — start/stop script; `src/XikeStorLCD.page` — the settings page.
 
 The helper is compiled as a static musl binary (~60 KB, no runtime dependencies) and embedded
-in the `.plg`; the installer verifies its SHA-256 before use. To check the published binary,
-rebuild it with `./build_helper.sh` and compare the hash it prints. An identical hash needs the
-same compiler and musl versions; with a different toolchain, review `src/xk_hidfeat.c` instead.
+in the `.plg`; the installer verifies its SHA-256 before use.
+
+**Verifying the binary.** The build is reproducible. On every push, [CI](.github/workflows/ci.yml)
+rebuilds the helper from `src/xk_hidfeat.c` on a clean Ubuntu 24.04 runner and fails unless the
+result is byte-identical to the committed `bin/xk_hidfeat`; the run summary shows both hashes.
+You can do the same locally with `./build_helper.sh` (Ubuntu 24.04's `musl-tools`, or Docker).
 
 Nothing on Unraid uses Python: PHP ships with Unraid, and the helper is self-contained.
 
@@ -124,9 +131,15 @@ python3 build.py --version 2026.10.24 --changes "- What changed"
 ```
 
 Commit `src/`, `bin/xk_hidfeat`, and the regenerated `xk_lcd.plg`, `templates/xk_lcd.xml` and
-`ca_profile.xml`.
+`ca_profile.xml`. CI fails if any generated file is out of date with `src/`
+(`python3 build.py --check` runs the same check locally).
 Unraid detects updates from the `version` attribute, so bump it for every release. Set `OWNER`
 (and optionally `SUPPORT`, your forum thread) at the top of `build.py` once.
+
+**Tests.** `./tests/run_tests.sh` (needs `php`, `python3`, `gcc`) runs syntax checks, verifies
+the ioctl numbers against `<linux/hidraw.h>`, and drives the real daemon against a simulated
+panel (`tests/mock_helper.py`) that reproduces the hardware's echo behaviour: handshake, data
+push, echo filtering, USB reconnect, menu actions with power actions on and off. It runs in CI.
 
 The daemon also runs standalone (with the helper next to it):
 `php xk_lcd.php --config my.cfg`, or `--test` to send fixed test values once.

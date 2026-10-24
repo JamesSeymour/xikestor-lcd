@@ -2,10 +2,11 @@
 """Generate xk_lcd.plg from the files in src/.
 
 Usage:  python3 build.py [--version YYYY.MM.DD] [--changes "text"]
+        python3 build.py --check     # verify generated files match src/ (used by CI)
 Edit the settings below once, then re-run after every change and commit
 src/ plus the generated xk_lcd.plg, templates/xk_lcd.xml and ca_profile.xml.
 """
-import argparse, base64, datetime, hashlib, pathlib, xml.dom.minidom
+import argparse, base64, datetime, hashlib, pathlib, re, sys, xml.dom.minidom
 
 HOST     = "github"          # "github" (needed for Community Apps) or "gitlab"
 OWNER    = "JamesSeymour"      # <-- your GitHub/GitLab username
@@ -139,12 +140,8 @@ support link.</Profile>
 </CommunityApplications>
 """
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--version", default=datetime.date.today().strftime("%Y.%m.%d"))
-    ap.add_argument("--changes", default="- See the project README and commit history")
-    a = ap.parse_args()
-
+def render(version, changes_text):
+    """Return {relative path: file contents} for every generated file."""
     blocks = []
     for src, dest, mode in FILES:
         body = (SRC / src).read_text().replace("PROJECT_URL", PROJECT_URL)
@@ -152,7 +149,7 @@ def main():
             raise SystemExit(f"{src} contains ']]>' which would break the CDATA block")
         blocks.append(FILE_TMPL.format(dest=dest, mode=mode, body=body))
 
-    changes = "\n".join(l if l.startswith("-") else f"- {l}" for l in a.changes.splitlines())
+    changes = "\n".join(l if l.startswith("-") else f"- {l}" for l in changes_text.splitlines())
     helper = ROOT / "bin" / "xk_hidfeat"
     if not helper.exists():
         raise SystemExit("bin/xk_hidfeat missing - run ./build_helper.sh first")
@@ -161,7 +158,7 @@ def main():
     b64 = base64.encodebytes(raw_bin).decode().strip()
 
     plg = TEMPLATE.format(helper_b64=b64, helper_sha=helper_sha, author=OWNER, project_url=PROJECT_URL, raw=RAW, support=SUPPORT_URL,
-                          version=a.version, changes=changes, files="".join(blocks))
+                          version=version, changes=changes, files="".join(blocks))
     outputs = {
         "xk_lcd.plg": plg,
         "templates/xk_lcd.xml": CA_TEMPLATE.format(raw=RAW, project_url=PROJECT_URL,
@@ -169,8 +166,37 @@ def main():
         "ca_profile.xml": CA_PROFILE.format(raw=RAW, project_url=PROJECT_URL,
                                             support=SUPPORT_URL),
     }
-    for name, text in outputs.items():
+    for text in outputs.values():
         xml.dom.minidom.parseString(text.encode())     # fail loudly on malformed XML
+    return outputs, helper_sha
+
+def current_release():
+    """Version and changelog of the committed xk_lcd.plg, so --check can re-render it."""
+    plg = (ROOT / "xk_lcd.plg").read_text()
+    version = re.search(r'<!ENTITY version\s+"([^"]+)">', plg).group(1)
+    changes = re.search(r"<CHANGES>\n###&version;\n(.*?)\n</CHANGES>", plg, re.S).group(1)
+    return version, changes
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--version", default=datetime.date.today().strftime("%Y.%m.%d"))
+    ap.add_argument("--changes", default="- See the project README and commit history")
+    ap.add_argument("--check", action="store_true",
+                    help="verify the committed generated files match src/; write nothing")
+    a = ap.parse_args()
+
+    if a.check:
+        outputs, helper_sha = render(*current_release())
+        stale = [n for n, t in outputs.items()
+                 if not (ROOT / n).exists() or (ROOT / n).read_text() != t]
+        if stale:
+            print("Out of date (run build.py and commit): " + ", ".join(stale))
+            sys.exit(1)
+        print(f"generated files are up to date (helper sha256 {helper_sha})")
+        return
+
+    outputs, helper_sha = render(a.version, a.changes)
+    for name, text in outputs.items():
         path = ROOT / name
         path.parent.mkdir(exist_ok=True)
         path.write_text(text)

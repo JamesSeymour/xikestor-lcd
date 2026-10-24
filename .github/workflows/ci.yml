@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-helper:
+    name: Rebuild helper and compare with bin/xk_hidfeat
+    # Must match the toolchain bin/xk_hidfeat was built with (Ubuntu 24.04: gcc 13, musl 1.2.4)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install musl
+        run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
+
+      - name: Build from source
+        run: |
+          musl-gcc -static -Os -s -Wall -Wextra -Werror -o /tmp/xk_hidfeat src/xk_hidfeat.c
+          {
+            echo "### Helper build"
+            echo '```'
+            musl-gcc --version | head -1
+            dpkg-query -W musl-dev
+            echo "built:     $(sha256sum /tmp/xk_hidfeat | cut -d' ' -f1)"
+            echo "committed: $(sha256sum bin/xk_hidfeat | cut -d' ' -f1)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare with committed binary
+        run: |
+          if cmp -s /tmp/xk_hidfeat bin/xk_hidfeat; then
+            echo "bin/xk_hidfeat is a byte-identical build of src/xk_hidfeat.c" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::bin/xk_hidfeat does not match a fresh build of src/xk_hidfeat.c. If the source changed or the runner's toolchain was updated, download the 'xk_hidfeat' artifact from this run, commit it as bin/xk_hidfeat, and run build.py."
+            exit 1
+          fi
+
+      - name: Upload fresh build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xk_hidfeat
+          path: /tmp/xk_hidfeat
+
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tool versions
+        run: php --version | head -1 && python3 --version
+      - name: Run test suite
+        run: ./tests/run_tests.sh
